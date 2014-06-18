@@ -1,0 +1,2 @@
+import os
+os.system('python ~/voelzlab/sandbox/gfzhou/test/useSurprisal-dvalue.py -oc /Users/tud51931/projects/MSM/msm/ff03-hybridkcenter/RMSDCluster4.0/Dataforsurprisal/tCounts.mtx -bc /Users/tud51931/projects/MSM/msm/ff03ERR-hybridkcenter/RMSDCluster4.0/DataforSurprisal/SlicedAssignments/bs-Assignments-100/UnMappedCounts/ -c 4.0 -m ERR-RMSD -n 100 -s -p /Users/tud51931/projects/MSM/msm/ff03ERR-hybridkcenter/RMSDCluster4.0/Dataforsurprisal/Populations_raw.dat -d')
