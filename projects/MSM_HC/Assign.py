@@ -53,6 +53,7 @@ for trajid in range(project.n_trajs):
     psi = mdtraj.compute_psi(traj)[1]*360/(2*np.pi)
     HCarray = ConvertDihedralsToArray(phi,psi)
     assignments[trajid][:traj.n_frames] = count_n_helices(HCarray)
+    assignments = assignments.astype(int)
 
 
 
