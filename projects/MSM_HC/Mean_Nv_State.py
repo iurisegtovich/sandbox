@@ -18,3 +18,4 @@ Nv = io.loadh(Nv_file,'arr_0')
 
 Mean_Nv_state = mean_Nv_state(assignment,Nv)
 print Mean_Nv_state
+np.savetxt('mean_Nv_state.dat',Mean_Nv_state)
