@@ -1,4 +1,4 @@
-#Assign the snapshot according to helix coil sequence.
+#Assign the snapshot according to number of helical residue.
 import os,sys
 from msmbuilder import Project
 from mdtraj import io
@@ -54,7 +54,5 @@ for trajid in range(project.n_trajs):
     HCarray = ConvertDihedralsToArray(phi,psi)
     assignments[trajid][:traj.n_frames] = count_n_helices(HCarray)
     assignments = assignments.astype(int)
-
-
 
 io.saveh(args.Output,assignments)
