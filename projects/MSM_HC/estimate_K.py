@@ -5,68 +5,56 @@ from scipy.optimize import minimize
 
 def generate_W_sym(quantity,gamma):
     row=col=len(quantity)
-    W = np.zeros((row,col))
+    w = np.zeros((row,col))
     for i in range(row):
         for j in range(col):
-            wij = np.abs(quantity[i] - quantity[j])
-            W[i,j] = np.exp(-gamma*wij)
+            w[i,j] = np.abs(quantity[i] - quantity[j])
+    w_sym = 0.5*(w+w.transpose())
+    W_sym = np.exp(-gamma*w_sym)
 
-    return W
+    return W_sym,w
 
-def solve_rho(W_sym,population,sigma=0.001):
-    # self-consistently slove the equation. Doesn't work yet.
-    rho=5.0*np.ones(W_sym.shape[0])
-    i=0
-    while i<100:
-        i = i+1
-        v = np.dot(rho,W_sym)
-        rho_new = population/v
-        print "step %d"%i,"rho:",rho
-        if np.abs(rho_new-rho).max()<=sigma:
+def solve_beta_lambda(W_sym,population,sigma=1e-5):
+    beta= 1.0*np.ones((W_sym.shape[0],1))
+    while True:
+        lam = population.reshape(-1,1)/np.dot(W_sym,beta)
+        beta_new = population.reshape(-1,1)/np.dot(W_sym,lam)
+        lam_new = population.reshape(-1,1)/np.dot(W_sym,beta_new)
+        if np.abs(beta_new-beta).max()<=sigma and np.abs(lam_new-lam).max()<=sigma:
             break
         else:
-            rho = rho_new
-    return rho_new
+            beta = beta_new
 
-def solve_rho_min(W_sym,population):
-    
-    fun = lambda rho: np.sum((rho*np.dot(W_sym,rho) - population.reshape(-1,1))**2)
-    #rho= 1.0*np.ones((W_sym.shape[0],1))
-    rho = np.sqrt(population.reshape(-1,1))
-    cons = ({'type':'ineq','fun':lambda rho: rho})
-    bnds = tuple(bnds)
-    res = minimize(fun,rho,method='SLSQP',bounds=bnds,options={'ftol': 1e-6, 'eps': 1e-6})
-    print res
-    return res['x']
+    return beta_new,lam_new
 
-def cal_aver_ensemble(W_sym,quantity,rho):
+
+def cal_aver_ensemble(populaiton,w,K):
     aver_w = 0
-    for i in range(W_sym.shape[0]):
-        for j in range(W_sym.shape[1]):
-            aver_w = aver_w + rho[i]*rho[j]*W_sym[i,j]*np.abs(quantity[i]-quantity[j])
+    for i in range(K.shape[0]):
+        for j in range(K.shape[1]):
+            aver_w = aver_w + populaiton[i]*K[i,j]*w[i,j]
     print aver_w
 
-def F(rho):
-    return rho*np.dot(W_sym,rho) - p.reshape(-1,1)
+def estimate_K(W_sym,population,rho):
+    K =np.zeros((W_sym.shape))
+    for i in range(W_sym.shape[0]):
+        for j in range(W_sym.shape[1]):
+            K[i,j] = rho[i]*rho[j]*W_sym[i,j]/population[i]
+    return K
 
 
-
-global p
-p = np.loadtxt('recover/populations.dat')
-#d = np.loadtxt('mean_Nv_state.dat')
-d = np.arange(0,11)
+p = np.loadtxt('Populations.dat')
+d = np.loadtxt('mean_Nv_state.dat')
 print p.shape
 
-global W_sym
-W_sym = generate_W_sym(d,1)
-#rho = solve_rho(W_sym,p)
+W_sym,w = generate_W_sym(d,1)
+beta,lam = solve_beta_lambda(W_sym,p,sigma=1e-5)
+rho = np.sqrt(beta*lam)
+K = estimate_K(W_sym,p,rho)
+aver_w = cal_aver_ensemble(W_sym,w,K)
+print "K:",K
+print "aver_w",aver_w
 
-rho_init= 1.0*np.ones((W_sym.shape[0],1))
-print rho_init*np.dot(W_sym,rho_init) - p.reshape(-1,1)
-rho = scipy.optimize.broyden1(F,rho_init,f_tol=1e-14)
-print 'fun:',rho*np.dot(W_sym,rho) - p.reshape(-1,1)
-print rho
-#cal_aver_ensemble(W_sym,d,rho)
 
 
 
