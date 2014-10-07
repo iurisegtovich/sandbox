@@ -10,8 +10,8 @@ def mean_Nv_state(assignment,Nv):
 
 
 
-assign_file = "/Volumes/Guangfeng/Fs-peptide/Fs-ff03-owlsnest/ff03-RRR-full-msm/Assignments.h5.RRR"
-Nv_file = "/Volumes/Guangfeng/Fs-peptide/Fs-ff03-owlsnest/ff03-RRR-full-msm/hc_analysis/Nv.h5"
+assign_file = "/Volumes/Guangfeng/Fs-peptide/Fs-ff03-owlsnest/HelixCoil/Data/Assignments.h5"
+Nv_file = "Nv.h5"
 
 assignment = io.loadh(assign_file,'arr_0')
 Nv = io.loadh(Nv_file,'arr_0')
