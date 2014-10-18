@@ -15,7 +15,8 @@ I = np.argsort(l)
 w_max = w[I[-1]]
 v_max = v[I[-1]]
 
-assignment = io.loadh('/Volumes/Guangfeng/Fs-peptide/Fs-ff03-owlsnest/HelixCoil/Data/Assignments.h5','arr_0')
+#assignment = io.loadh('/Volumes/Guangfeng/Fs-peptide/Fs-ff03-owlsnest/HelixCoil/Data/Assignments.h5','arr_0')
+assignment = io.loadh('results/Nv.h5','arr_0')
 project = Project.load_from('/Volumes/Guangfeng/Fs-peptide/Fs-ff03-owlsnest/HelixCoil/ProjectInfo.yaml')
 c = Counter(assignment.reshape(1,-1)[0])
 populations = np.zeros(np.max(c.keys())+1)
@@ -44,9 +45,10 @@ for i in range(project.n_trajs):
             populations[assignment[i][j]] = populations[assignment[i][j]] + weight
 
 # weigh populations by the counts
-for i in range(populations.shape[0]):
-    populations[i] = populations[i]/c[i]
+#for i in range(populations.shape[0]):
+#    populations[i] = populations[i]/c[i]
 populations = populations/populations.sum()
 print populations
-np.savetxt('Populations.LifsonRoig.dat',populations)
+#np.savetxt('Populations.LifsonRoig.dat',populations)
+np.savetxt('Populations.Nv.dat',populations)
 
