@@ -56,8 +56,9 @@ while i <=steps:
     i = i + 1
 print "Done! Accept ratio:%f"%(accept/steps)
 print count
-plt.figure()
-plt.plot(range(len(count)),count/np.sum(count),'o')
-plt.show()
+#plt.figure()
+#plt.plot(range(len(count)),count/np.sum(count),'o')
+#plt.show()
+np.savetxt('length_distribution.dat',count/np.sum(count))
 
 
