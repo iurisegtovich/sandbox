@@ -4,6 +4,8 @@ import usepymol_setdihedral as setdihedral
 
 phi_ndx = np.loadtxt('')
 psi_ndx = np.loadtxt('')
+input_pdb = ''
+cmd.load(input_pdb,'mol')
 
 #alpha-helix
 Phi_h = -60.0
