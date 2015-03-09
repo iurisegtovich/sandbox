@@ -1,0 +1,19 @@
+tolerance 2.0 
+output tmp5.pdb 
+filetype pdb 
+
+#structure 
+#  number 1 
+#  inside cube 0. 0. 0. 45. 
+#end structure 
+
+structure gen5.pdb
+  number 1
+  fixed 22.5 22.5 22.5 0.000000 0.000000 0.000000 
+  centerofmass
+end structure
+
+structure water.pdb
+  number 2900 
+  inside cube 0. 0. 0. 45.
+end structure
