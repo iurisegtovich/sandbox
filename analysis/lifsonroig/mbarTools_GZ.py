@@ -58,8 +58,8 @@ def ComputeFreeEnergiesFromREMD(energies, obs, bins, temps, N_max = 500000, NSki
     ntemps = len(temps) # number of temperatures
     K = ntemps # ntemps 
     beta = 1.0 / (kB * 300.0) # inverse temperature of simulations (in 1/(kcal/mol))
-    nbins = len(bins)  # number of bins
-    binwidth = bins[1] - bins[0]
+    #nbins = len(bins)  # number of bins
+    #binwidth = bins[1] - bins[0]
 
     energies = energies[:,::NSkipTraj]
     obs = obs[:,::NSkipTraj]
@@ -89,7 +89,8 @@ def ComputeFreeEnergiesFromREMD(energies, obs, bins, temps, N_max = 500000, NSki
         N_k[k] = N_max
 
         for n in range(N_k[k]):       
-            u_kn[k,n] = beta_k[k] * energies[k,n]
+            u_kn[k,n] = energies[k,n]
+            #u_kn[k,n] = beta_k[k] * energies[k,n]
             for l in range(ntemps):
                 u_kln[k,l,n]   = beta_k[l] / beta_k[k] * u_kn[k,n]
     """
@@ -120,8 +121,8 @@ def ComputeFreeEnergiesFromREMD(energies, obs, bins, temps, N_max = 500000, NSki
     # Initialize MBAR.
     print "Running MBAR..."
     #mbar = MBAR.MBAR(u_kln, N_k, verbose = True, method = 'Newton-Raphson') # doesn't work too well...
-    mbar = MBAR(u_kln, N_k, relative_tolerance = 1.0e-7, verbose = True, method = 'self-consistent-iteration')
-    #mbar = MBAR(u_kln, N_k, relative_tolerance = 2.0e-2, verbose = True, method = 'self-consistent-iteration')
+    #mbar = MBAR(u_kln, N_k, relative_tolerance = 1.0e-7, verbose = True, method = 'self-consistent-iteration')
+    mbar = MBAR(u_kln, N_k, relative_tolerance = 2.0e-2, verbose = True, method = 'self-consistent-iteration')
     return mbar
     """
     print 'binindex\t-binvalue\tP\tdP'
