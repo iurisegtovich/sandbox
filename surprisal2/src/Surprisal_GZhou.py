@@ -34,17 +34,12 @@ class SurprisalAnalysis:
         """
 
 
-        self.normalize = False
+        self.normalize = "counts"
         for k,v in kwargs.iteritems():
             if k == 'normalize':
                 self.normalize = v
 
-        self.tCounts_list = []
-        for tCounts in matrices:
-            self.tCounts_list.append(tCounts)
-
-
-    def calculate_surprisal_state(self, *args, state_id):
+    def calculate_surprisal_state(self, state_id, *args):
 
         """
         Calculates surprisal for arbitrary sets of counts. If normalized, the
@@ -56,19 +51,21 @@ class SurprisalAnalysis:
         """
 
         if len(args) < 2:
-            raise ValueError('multi_surprisal() must be given at least two count arrays!')
+            raise ValueError(' must be given at least two count arrays!')
 
         # compute combined counts
-        c_comb = args[0][state_id] + args[1][state_d]
+        c_comb = args[0][state_id] + args[1][state_id]
         if len(args) > 2:
-          for i in range(2, len(args)):
-            c_comb += args[i][state_id]
+            for i in range(2, len(args)):
+                c_comb += args[i][state_id]
+
 
         # compute count totals
-        totals = [c.sum() for c in args]
+        totals = [c[state_id].sum() for c in args]
         total_comb = c_comb.sum()
         if total_comb != 0:
-            surprisal /= float(total_comb)
+            surprisal = float(total_comb)
+
         if self.normalize == "counts":
 
             # Voelz, V. A., Elman, B., Razavi, A. M., & Zhou, G. (2014).
@@ -76,27 +73,24 @@ class SurprisalAnalysis:
             # Equation (7)
             surprisal = H(c_comb)
             for i in range(len(args)):
-                surprisal -= totals[i]/total_com*H(args[i])
-
+                surprisal -= totals[i]/total_comb*H(args[i][state_id])
 
         elif self.normalize == "mle":
             # Voelz, V. A., Elman, B., Razavi, A. M., & Zhou, G. (2014).
             # Surprisal Metrics for Quantifying Perturbed Conformational Dynamics in Markov State Models.
             # Equation (14) in the parentheses.
+            print "Not implemented yet"
 
         return surprisal
 
 
     def calculate_surprisal(self, *matrices):
 
-        counts_state = []
-        self.surprisal_states_ =[]
+        self.surprisal_total_ =[]
         matrix_shape = check_matrices_shape(*matrices)
 
-        for state_id in matrix_shape[0]:
-            for i in range(len(matrices)):
-                counts_state.extend(matrices[i],state_id)
-            self.surprisal_total_.extend(calculate_surprisal_state(counts_state))
+        for state_id in range(matrix_shape[0]):
+            self.surprisal_total_.append(self.calculate_surprisal_state(state_id,*matrices))
 
 
 
@@ -120,6 +114,7 @@ def H(p, normalize=True):
 
     # non-zero entries only
     Ind = (p>0)
+
     return np.dot(-p[Ind], np.log(p[Ind]))
 
 def H_cross(p,q,normalize=True):
@@ -154,3 +149,5 @@ def H_var(c):
 
     # return q^T V q
     return np.dot(q, V.dot(q))
+
+
