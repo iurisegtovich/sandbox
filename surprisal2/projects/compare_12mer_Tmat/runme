@@ -1,0 +1,23 @@
+# TPT for the WT sequence AAAAAA
+#python get_macrostates.py ../build_12mer_Tmat/microstates.dat macroT_AAAAAA
+#CalculateTPT.py -t ../build_12mer_Tmat/macroT_AAAAAA.mtx -o macroT_AAAAAA
+#FindPaths.py -t ../build_12mer_Tmat/macroT_AAAAAA.mtx -n 10 -s macroT_AAAAAA/U_states.dat -e macroT_AAAAAA/F_states.dat -o macroT_AAAAAA/Paths.h5
+python get_populations.py ../build_12mer_Tmat/macroT_AAAAAA.mtx macroT_AAAAAA
+
+# TPT for the mutant sequence AAFAAA
+#python get_macrostates.py ../build_12mer_Tmat/microstates.dat macroT_AAFAAA
+#CalculateTPT.py -t ../build_12mer_Tmat/macroT_AAFAAA.mtx -o macroT_AAFAAA
+#FindPaths.py -t ../build_12mer_Tmat/macroT_AAFAAA.mtx -n 10 -s macroT_AAFAAA/U_states.dat -e macroT_AAFAAA/F_states.dat -o macroT_AAFAAA/Paths.h5
+python get_populations.py ../build_12mer_Tmat/macroT_AAFAAA.mtx macroT_AAFAAA
+
+# plot the results
+python plot_TPT_paths_12mer.py macroT_AAAAAA macroT_AAFAAA
+open -a /Applications/Preview.app tpt_wt_vs_mut.eps
+
+python compute_true_surprisal.py
+open -a /Applications/Preview.app true_surprisal.eps 
+
+
+
+
+

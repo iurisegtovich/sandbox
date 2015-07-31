@@ -1,0 +1,6 @@
+nsamples                 50
+npresamples              0
+nrounds                  200
+sampling_method          'uniform'
+adaptive_method          'pi_si variance'  #'JSD'   #continue traj'
+system                   'hairpin-macro150' #'toy wt mut'  #'toy'
