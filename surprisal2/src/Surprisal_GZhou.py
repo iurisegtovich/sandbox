@@ -3,6 +3,7 @@
 import sys
 import os 
 import numpy as np
+from scipy.sparse import issparse
 from msmbuilder import version
 
 msmb_version = version.version
@@ -14,6 +15,8 @@ elif msmb_version == '3.2.0':
     from msmbuilder.msm import MarkovStateModel
 
 
+
+#TODO: Add Kullback-Leibler Divergence
 
 def check_matrices_shape(matrices):
 
@@ -60,7 +63,6 @@ class SurprisalAnalysis:
         self.normalize = normalize
         self.var_method = var_method
 
-
         self.surprisals_ = None
         self.surprisals_var_ = None
         self.surprisal_weights_ = None
@@ -104,24 +106,27 @@ class SurprisalAnalysis:
 
         self.state_populations_mle_ = []
         for matrix in matrices:
-            self.state_populations_mle_.append(estimate_mle_populations(matrix.toarray()))
+            if issparse(matrix):
+                self.state_populations_mle_.append(estimate_mle_populations(matrix.toarray()))
+            else:
+                self.state_populations_mle_.append(estimate_mle_populations(matrix))
         self.state_populations_mle_ = np.array(self.state_populations_mle_)
 
     def _compute_s_weights(self, matrices, normalize="counts"):
 
-        if normalize.lower() == "counts":
+        if normalize == "counts":
             #Count-based estimation of combined populations used in JSD. Eq 10 in Ref[1].
             if self.state_populations_counts_ is None:
                 self._compute_state_populations_counts(matrices)
             return np.sum(self.state_populations_counts_,axis=0)/np.sum(self.state_populations_counts_)
 
-        elif normalize.lower() == "mle":
+        elif normalize == "mle":
             #Eigenvector-based estimation of combined populations used in JSD. Eq 14,15 in Ref[1].
             if self.state_populations_mle_ is None:
                 self._compute_state_populations_mle(matrices)
             return np.mean(self.state_populations_mle_,axis=0)
 
-    def _compute_count_normalilzed_si(self, c_row):
+    def _compute_count_normalized_si(self, c_row):
         c_comb, totals, total_comb = self._prepare_c_row(c_row)
 
         si = H(c_comb)
@@ -159,10 +164,10 @@ class SurprisalAnalysis:
 
         """
 
-        if normalize.lower() == "counts":
-            return self._compute_count_normalilzed_si(c_row=c_row)
+        if normalize == "counts":
+            return self._compute_count_normalized_si(c_row=c_row)
 
-        elif normalize.lower() == "mle":
+        elif normalize == "mle":
             if state_id is None:
                 raise ValueError("Have to provide state id in order to use MLE population weights")
             else:
@@ -179,8 +184,6 @@ class SurprisalAnalysis:
         if normalize == "counts":
             p_list = [counts2probs(c+0.5) for c in c_row]
         elif normalize == "mle":
-            print "MLE normalization is not currently available in calculating surprisal variance using bootstrap!"
-            print "Use counts based normalization instead."
             p_list = [counts2probs(c+0.5) for c in c_row]
 
         # Draw bootstrapped counts from a multinomial distribution
@@ -198,9 +201,6 @@ class SurprisalAnalysis:
     def _compute_si_var_analytical(self, c_row, state_id, normalize="counts"):
 
         c_comb, totals, total_comb = self._prepare_c_row(c_row)
-
-        if normalize != "counts":
-            print "Only count based normalization is available currently."
 
         V = []
         m = self.matrix_shape[0]
@@ -225,7 +225,6 @@ class SurprisalAnalysis:
         if normalize == "counts":
             q = q/total_comb
 
-        # return q^T W q
         return np.dot(q, W.dot(q))
 
     def cal_si_dense(self, matrices, state_id, normalize="counts"):
@@ -246,7 +245,6 @@ class SurprisalAnalysis:
         return self._compute_si_var_bootstrap([matrices[i][state_id].toarray()[0] for i in range(len(matrices))],
                                               state_id, n_bootstraps, normalize)
 
-
     def cal_si_var_analytical_dense(self, matrices, state_id, normalize="counts"):
 
         return self._compute_si_var_analytical([matrices[i][state_id] for i in range(len(matrices))],
@@ -261,8 +259,6 @@ class SurprisalAnalysis:
         #Should work for both sparse and dense matrix type
         self.surprisal_weights_ = self._compute_s_weights(matrices, normalize)
 
-
-
     def calculate_surprisals(self, *matrices):
 
         self.surprisals_ = []
@@ -273,25 +269,28 @@ class SurprisalAnalysis:
         else:
             calStateSurprisal = self.cal_si_sparse
 
-        if self.normalize == "mle":
+        if self.normalize.lower() == "mle":
             if self.state_populations_mle_ is None:
                 self._compute_state_populations_mle(matrices)
 
         for state_id in range(self.matrix_shape[0]):
             self.surprisals_.append(calStateSurprisal(matrices=matrices,
                                                       state_id=state_id,
-                                                      normalize=self.normalize))
+                                                      normalize=self.normalize.lower()))
 
     def calculate_surprisals_var(self, *matrices):
 
         self.surprisals_var_ = []
         self.matrix_shape = check_matrices_shape(matrices)
 
-        if self.normalize == "mle":
+        if self.normalize.lower() == "mle":
             if self.state_populations_mle_ is None:
                 self._compute_state_populations_mle(matrices)
 
         if self.var_method.lower() == "bootstrap":
+            if self.normalize.lower() != "counts":
+                print "Only count based normalization is available currently."
+                print "Use counts based normalization instead."
 
             if self.matrix_type.lower() == "dense":
                 calStateSurprisalVariance = self.cal_si_var_bootstrap_dense
@@ -302,8 +301,11 @@ class SurprisalAnalysis:
                 self.surprisals_var_.append(calStateSurprisalVariance(matrices=matrices,
                                                                       state_id=state_id,
                                                                       n_bootstraps=100,
-                                                                      normalize=self.normalize))
+                                                                      normalize="counts"))
         elif self.var_method.lower() == "analytical":
+            if self.normalize.lower() != "counts":
+                print "Only count based normalization is available currently."
+                print "Use counts based normalization instead."
 
             if self.matrix_type.lower() == "dense":
                 calStateSurprisalVariance = self.cal_si_var_analytical_dense
@@ -312,7 +314,7 @@ class SurprisalAnalysis:
             for state_id in range(self.matrix_shape[0]):
                 self.surprisals_var_.append(calStateSurprisalVariance(matrices=matrices,
                                                                       state_id=state_id,
-                                                                      normalize=self.normalize))
+                                                                      normalize="counts"))
 
     def calculate_JSDs(self, *matrices):
 
@@ -382,75 +384,6 @@ def H_var(c):
 
     # return q^T V q
     return np.dot(q, V.dot(q))
-
-def surprisal_var(c1, c2, normalize=True, bootstrap=False, n_bootstraps=100):
-    """Estimates the variance of the surprisal, using either
-       (i) the analytical estimate, or (2) a bootstrap approach.
-    INPUTS
-    c1          numpy array of counts 1
-    c2          numpy array of counts 1
-    OPTIONS
-    normalize   If True, surprisals will be calculated by dividing the result by the total numnber of counts
-    bootstrap   If True, use nonparameterix bootstrap to estimate the variance (default: True)
-    n_bootstrap The number of bootstraps to perform
-    RETURNS
-    variance estimate
-    """
-
-    m = c1.shape[0]
-    assert c1.shape == c2.shape, 'c1 and c2 need to have the same shape'
-
-    c_comb = c1 + c2
-    total_c1 = c1.sum()
-    total_c2 = c2.sum()
-    total_comb = total_c1 + total_c2
-
-    if bootstrap:
-        # use MLE probs of multinomal distribution (pseudocount of 1/2 according to Jeffrey's prior)
-        p1 = counts2probs(c1+0.5)
-        p2 = counts2probs(c2+0.5)
-
-        # Draw bootstrapped counts from a multinomial distribution
-        surprisals = np.zeros(n_bootstraps)
-        resampled_c1 = np.random.multinomial(total_c1, p1, size=n_bootstraps)
-        resampled_c2 = np.random.multinomial(total_c2, p2, size=n_bootstraps)
-        for trial in range(n_bootstraps):
-            surprisals[trial] =  surprisal(resampled_c1[trial,:], resampled_c2[trial,:], normalize=normalize)
-        return surprisals.var()
-
-    else:
-        # Use the analytical expression in Voelz et al. 201x to estimate the variance in the surprisal
-
-        # build MVN/multinomial covariance matrices for c1 and c2
-        V1 = cov_multinomial_counts(c1)
-        V2 = cov_multinomial_counts(c2)
-
-        # make a block diagonal matrix W = diag(V1, V2)
-        W = np.zeros( (2*m, 2*m) )
-        W[0:m,0:m] = V1
-        W[m:(2*m), m:(2*m)] = V2
-
-        # compute the vector of sensitivities q = [ds/dnj ... | ds/dn*j ...]
-        q = np.zeros( 2*m )
-        for i in range(m):
-            q[i]   = -1.0*surprisal(c1, c2, normalize=True)
-            if (c1[i]+c2[i]) >0:
-                q[i] -= np.log( float(c1[i]+c2[i])/total_comb )
-            if c1[i] > 0:
-                q[i] += np.log( float(c1[i])/total_c1 )
-        for i in range(m):
-            q[i+m] = -1.0*surprisal(c1, c2, normalize=True)
-            if (c1[i]+c2[i]) >0:
-                q[i] -= np.log( float(c1[i]+c2[i])/total_comb )
-            if c2[i] > 0:
-                q[i] += np.log( float(c2[i])/total_c2 )
-        if normalize:
-            q = q/total_comb
-
-        # return q^T W q
-        return np.dot(q, W.dot(q))
-
-
 
 def cov_multinomial_counts(c):
     """Returns the covariance matrix for a multinomal sample of counts c."""
