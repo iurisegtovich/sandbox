@@ -1,16 +1,20 @@
 import os,sys
 from scipy.io import mmread
-sys.path.append("../../src/")
-from Surprisal_GZhou import SurprisalAnalysis
+sys.path.append("../src/")
+from Surprisal import SurprisalAnalysis
+import numpy as np
 
-matrix1 = mmread("../wt-bb-cb-2000-2ev-t-20macro-tCounts.mtx").tolil()
-matrix2 = mmread("../tz4-bb-cb-2000-2ev-t-20macro-tCounts.mtx").tolil()
+matrices = []
+for pid in range(6383,6391):
+    matrix = mmread("Fs-%d-tCounts-macro40.mtx"%pid).tolil()
+    matrices.append(matrix)
 
 obj = SurprisalAnalysis(matrix_type = "sparse",normalize = "counts",var_method="analytical")
-obj.calculate_surprisals(matrix1,matrix2)
-obj.calculate_surprisals_var(matrix1,matrix2)
-obj.calculate_JSDs(matrix1,matrix2)
+obj.calculate_surprisals(*matrices)
+obj.calculate_surprisals_var(*matrices)
+obj.calculate_JSDs(*matrices)
 print obj.surprisals_
 print obj.surprisals_var_
 print obj.surprisal_weights_
 print obj.JensenShannonDivergence_
+print np.argsort(obj.JensenShannonDivergence_)
