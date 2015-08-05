@@ -9,7 +9,7 @@ from msmbuilder import version
 msmb_version = version.version
 
 if msmb_version == '2.8.2':
-    from msmbuiler.MSMLib import estimate_transition_matrix
+    from msmbuilder.MSMLib import estimate_transition_matrix
     from msmbuilder.msm_analysis import get_eigenvectors
 elif msmb_version == '3.2.0':
     from msmbuilder.msm import MarkovStateModel
