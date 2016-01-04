@@ -127,35 +127,6 @@ def getInds(c, stateInds, chunkSize, isSparse, updateSingleState=None):
                 i += chunkSize
     return indices
 
-def run_BacePlus(*cMats, nMacro, nProc, multiDist, outDir, filterFunc_BacePlus, chunkSize=100):
-
-    # check dimension consistency of cmats
-    shape = cMats[0].shape
-    for i,c in enumerate(cMats):
-        if c.shape != c.shape:
-            print "Error: Matrix {} has a different shape {} with shape {}".format(i,c.shape,shape)
-            raise
-
-    # cmats is a list of count matrix
-    if fliter == True:
-        cMats, map, statesKeep, statesCombine= fliterFunc_BacePlus(cMats, nProc)
-    else:
-        statesKeep = np.arange(shape[0], dtype=np.int32)
-        map = np.arange(shape[0], dtype=np.int32)
-
-    n_cmats = len(cmats)
-    n_micro = cmats[]
-
-    # get num counts in each state (or weight) Note: It contains multiple matrix
-    w_multi =  np.zero((n_cmats,n_micro))
-    for i,c in enumerate(cmats):
-        w_multi[i][:] = np.array(c.sum(axis=1)).flatten()
-        w_multi[i][statesKeep] += 1
-
-
-
-
-
 
 def run(c, nMacro, nProc, multiDist, outDir, filterFunc, chunkSize=100):
     # perform filter
@@ -165,6 +136,7 @@ def run(c, nMacro, nProc, multiDist, outDir, filterFunc, chunkSize=100):
     # get num counts in each state (or weight)
     w = np.array(c.sum(axis=1)).flatten()
     w[statesKeep] += 1
+
 
     unmerged = np.zeros(w.shape[0], dtype=np.int8)
     unmerged[statesKeep] = 1
@@ -407,95 +379,6 @@ def filterFuncDense(c, nProc):
         map[s] = map[dest]
 
     return c, map, statesKeep
-
-def preCombineSparse_BacePlus(cMats, nProc):
-
-    n_micro = cMats[0].shape[0]
-    w_multi = np.zeros(len(cMats),n_micro)
-    for i,c in enumerate(cMats):
-        w_multi[i][:] = np.array(c.sum(axis=1)).flatten()
-
-    map = np.arange(n_micro,dtype=np.int32)
-
-    pseud = np.ones(n_micro,dtype=np.float32)/n_micro
-
-    indices = np.arange(c.shape[0], dtype=np.int32)
-    statesKeep = np.arange(c.shape[0], dtype=np.int32)
-    statesCombine = np.arange(c.shape[0], dtype=np.int32)
-    unmerged = np.ones(c.shape[0], dtype=np.int8)
-
-    nInd = len(indices)
-    # Compute the JSD in the same matrix
-    if nInd >1 and nProc >1:
-        if nInd < nProc:
-            nProc=nInd
-        pool = multiprocessing.Pool(processes=nProc)
-        stepSize = int(nInd/nProc)
-        if nInd % stepSize > 3:
-            dlims = zip(range(0, nInd, stepSize),
-            range(stepSize, nInd, stepSize) + [nInd])
-        else:
-            dlims = zip(range(0, nInd - stepSize, stepSize),
-            range(stepSize, nInd - stepSize, stepSize) + [nInd])
-
-        args = []
-        for start, stop in dlims:
-            args.append(indices[start:stop])
-        result = pool.map_async(
-            functools.partial(multiDistSparseHelper, c1=pseud, w1=1, c=c, w=w, statesKeep=statesKeep, unmerged=unmerged), args)
-        result.wait()
-        d = np.concatenate(result.get())
-        pool.close()
-    else:
-        d = multiDistSparseHelper(
-            indices, pseud, 1, c, w, statesKeep, unmerged)
-
-
-
-
-
-def filterFuncSparse_BacePlus(cMats, nProc):
-
-    n_micro = cMats[0].shape[0]
-    w_multi = np.zeros(len(cMats),n_micro)
-    for i,c in enumerate(cMats):
-        w_multi[i][:] = np.array(c.sum(axis=1)).flatten()
-
-    map = np.arange(n_micro,dtype=np.int32)
-
-    pseud = np.ones(n_micro,dtype=np.float32)/n_micro
-
-    indices = np.arange(c.shape[0], dtype=np.int32)
-    statesKeep = np.arange(c.shape[0], dtype=np.int32)
-    statesCombine = np.arange(c.shape[0], dtype=np.int32)
-    unmerged = np.ones(c.shape[0], dtype=np.int8)
-
-    nInd = len(indices)
-    # Compute the JSD in the same matrix
-    if nInd >1 and nProc >1:
-        if nInd < nProc:
-            nProc=nInd
-        pool = multiprocessing.Pool(processes=nProc)
-        stepSize = int(nInd/nProc)
-        if nInd % stepSize > 3:
-            dlims = zip(range(0, nInd, stepSize),
-            range(stepSize, nInd, stepSize) + [nInd])
-        else:
-            dlims = zip(range(0, nInd - stepSize, stepSize),
-            range(stepSize, nInd - stepSize, stepSize) + [nInd])
-
-        args = []
-        for start, stop in dlims:
-            args.append(indices[start:stop])
-        result = pool.map_async(
-            functools.partial(multiDistSparseHelper, c1=pseud, w1=1, c=c, w=w, statesKeep=statesKeep, unmerged=unmerged), args)
-        result.wait()
-        d = np.concatenate(result.get())
-        pool.close()
-    else:
-        d = multiDistSparseHelper(
-            indices, pseud, 1, c, w, statesKeep, unmerged)
-
 
 
 def filterFuncSparse(c, nProc):
