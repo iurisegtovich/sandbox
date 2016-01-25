@@ -57,8 +57,8 @@ def D(x, pi):
 ##############
 ### Let's do a scan for the best alpha and gamma
 
-alpha_values = np.arange(-2.5, -0.1,0.01)
-gamma_values = np.arange(0.4, 2.8,0.01)
+alpha_values = np.arange(1.0, 1.5,0.005)
+gamma_values = np.arange(0.4, 0.5,0.005)
 
 # store the squared error (N_maxcal - N_mean)**2 + (r_maxcal - r_mean)**2 for each parameter set
 chi2_results = np.zeros( (alpha_values.shape[0],gamma_values.shape[0]))
@@ -76,7 +76,7 @@ for i in range(len(alpha_values)):
         # calculate W_ab
         W = np.exp(-alpha*N_ab) * np.exp(-gamma*r_ab)
 
-        tol = 1.0e-12
+        tol = 1.0e-8
         max_delta = 1.0
         trial = 0
         beta_a = np.ones(nstates) # initial guess
@@ -94,6 +94,8 @@ for i in range(len(alpha_values)):
             delta_lambda = np.sqrt(np.dot(diff_lambda,diff_lambda))
 
             max_delta = max(delta_beta,delta_lambda)
+            #print "delta_beta",delta_beta,"delta_lambda",delta_lambda
+            #print "max_delta",max_delta
             #print 'trial', trial, 'beta_a =', beta_a[0:3], '... lambda_b =', lambda_b[0:3],'...', 'delta_beta', delta_beta, 'delta_lambda', delta_lambda
 
             beta_a = new_beta_a
@@ -137,4 +139,18 @@ X,Y = np.meshgrid(alpha_values, gamma_values)
 plt.contour(X,Y, np.transpose(np.log(chi2_results)))
 plt.xlabel('$\\alpha$')
 plt.ylabel('$\\gamma$')
+plt.show()
+
+plt.figure(figsize=(6,6))
+for a in range(T.shape[0]):
+    for b in range(T.shape[1]):
+        plt.plot(T[a,b], best_T_maxcal[a,b], '.' )
+plt.xlabel('$T_{ab}$ from MSM', fontsize=12)
+plt.ylabel('maximum caliber $T_{ab}$', fontsize=12)
+plt.xscale('log')
+plt.yscale('log')
+plt.ylim([1e-8,1])
+plt.xlim([1e-8,1])
+#plt.plot([1,1e-3],[1,1e-3],'k-')
+plt.plot([1,1e-8],[1,1e-8],'k-')
 plt.show()
