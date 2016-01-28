@@ -1,5 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from scipy.spatial import distance
+import scipy.linalg
+from msmbuilder.msm.core import _solve_msm_eigensystem
 
 pid = 6383
 
@@ -7,6 +10,8 @@ T = np.load("./data/tProb-%d.npy"%pid)
 C_sym = np.load("./data/tCounts-%d.npy"%pid)
 m,n = T.shape
 obs = np.loadtxt("./data/Nhs_state-%d.dat"%pid)
+rmsd = np.load("./data/RMSDs-states-macro40-p%d.npy"%pid)
+tica = np.load("./data/tica_8-states-macro40-p%d.npy"%pid)
 
 # Equilibrium populations should be uniform
 if (0):
@@ -17,10 +22,20 @@ else:
     pi_a = evecs[:,np.argmax(evals)]
     pi_a = pi_a/pi_a.sum()
     print 'pi_a.sum()', pi_a.sum(), 'pi_a', pi_a
+    lagtime=50
+    impliedts = []
+    top_ten_evals = evals[np.argsort(-evals)[1:11]]
+    for i in top_ten_evals:
+        impliedts.append(-lagtime/np.log(i))
+    print "Implied Timescales(MSM):",impliedts
 
 
 # Calculate matrix of jump indicators, N_ab
 N_ab = np.ones(T.shape)
+for i in range(T.shape[0]):
+    for j in range(T.shape[1]):
+        if T[i,j] == 0:
+            N_ab[i,j] = 0
 for i in range(T.shape[0]):
     N_ab[i,i] = 0.
 
@@ -32,10 +47,11 @@ print 'The mean jump rate N_mean =', N_mean
 # Calculate the matrix of dynamical observables r_ab
 ### in our case: the distance between state centers
 r_ab = np.zeros(T.shape)
-nstates = len(obs)
+nstates = len(tica)
 for a in range(nstates):
     for b in range(nstates):
-        r_ab[a,b] = np.abs(obs[a]-obs[b])
+        #r_ab[a,b] = np.abs(rmsd[a]-rmsd[b])
+        r_ab[a,b] = distance.euclidean(tica[a][:],tica[b][:])
 
 # ... and the mean r_ab from the observed counts
 r_mean = (r_ab*C_sym).sum()/C_sym.sum()
@@ -56,9 +72,17 @@ def D(x, pi):
 
 ##############
 ### Let's do a scan for the best alpha and gamma
+#for rmsd
+#alpha_values = np.arange(0.81, 0.825,0.001)
+#gamma_values = np.arange(9.75, 9.8,0.001)
 
-alpha_values = np.arange(1.0, 1.5,0.005)
-gamma_values = np.arange(0.4, 0.5,0.005)
+#for 8-tics
+alpha_values = np.arange(0.6, 0.7,0.005)
+gamma_values = np.arange(0.88, 0.90,0.005)
+
+#for 2-tics
+#alpha_values = np.arange(1.0, 1.6,0.1)
+#gamma_values = np.arange(1.5, 3.0,0.1)
 
 # store the squared error (N_maxcal - N_mean)**2 + (r_maxcal - r_mean)**2 for each parameter set
 chi2_results = np.zeros( (alpha_values.shape[0],gamma_values.shape[0]))
@@ -153,4 +177,105 @@ plt.ylim([1e-8,1])
 plt.xlim([1e-8,1])
 #plt.plot([1,1e-3],[1,1e-3],'k-')
 plt.plot([1,1e-8],[1,1e-8],'k-')
+#figfn="rmsd-maxcal.pdf"
+figfn = "tICs-8-maxcal.pdf"
+plt.title(figfn)
+plt.savefig(figfn)
 plt.show()
+
+#plot colormap of T and T_maxcal
+plt.figure(figsize=(12,5))
+plt.subplot(1,2,1)
+plt.pcolor(T)
+plt.title("Color map of T_MSM")
+
+plt.subplot(1,2,2)
+plt.pcolor(best_T_maxcal)
+plt.title("Color map of T_MaxCal")
+
+plt.savefig("pcolor_T_8_tICs.png")
+plt.show()
+
+#calculate implied timescales associated with T_maxcal
+u_maxcal, lv_maxcal, rv_maxcal = scipy.linalg.eig(np.transpose(best_T_maxcal),left=True,right=True)
+print lv_maxcal[:,np.argmax(u_maxcal)]
+print rv_maxcal[:,np.argmax(u_maxcal)]
+print u_maxcal[np.argmax(u_maxcal)]
+ind_maxcal = np.argsort(-u_maxcal)
+top_ten_evals = u_maxcal[ind_maxcal[1:11]]
+
+lagtime = 50
+impliedts = []
+for i in top_ten_evals:
+    impliedts.append(-lagtime/np.log(i))
+print "Implied Timescales(MaxCal):",impliedts
+
+u_msm, lv_msm, rv_msm = scipy.linalg.eig(np.transpose(T),left=True,right=True)
+print lv_msm[:,np.argmax(u_msm)]
+print rv_msm[:,np.argmax(u_msm)]
+impliedts = []
+ind_msm = np.argsort(-u_msm)
+top_ten_evals = u_msm[ind_msm[1:11]]
+for i in top_ten_evals:
+    impliedts.append(-lagtime/np.log(i))
+print "Implied Timescales(MSM):",impliedts
+
+p = 1./40.*np.ones(40)
+"""
+plt.figure(figsize=(12,12))
+
+for j in range(5):
+    ax = plt.subplot(5,2,j*2+1)
+    #plt.plot(range(len(msm.left_eigenvectors_[:,j])),msm.left_eigenvectors_[:,j],"ro--")
+    #plt.plot(range(len(msm.left_eigenvectors_[:,j])),[0]*len(msm.left_eigenvectors_[:,j]),"k--")
+    plt.hold(True)
+
+    if np.dot(p,lv_msm[:,j]) > 0 :
+        for stateid in range(40):
+            plt.vlines(stateid,min(0,rv_msm[stateid,j]),max(rv_msm[stateid,j],0),linestyles='solid',linewidth="2")
+    else:
+        for stateid in range(40):
+            plt.vlines(stateid,min(0,-rv_msm[stateid,j]),max(-rv_msm[stateid,j],0),linestyles='solid',linewidth="2")
+
+    if j == 0:
+        plt.title("Fs-EEE-msm")
+
+for j in range(5):
+    ax = plt.subplot(5,2,j*2+2)
+    #plt.plot(range(len(msm.left_eigenvectors_[:,j])),msm.left_eigenvectors_[:,j],"ro--")
+    #plt.plot(range(len(msm.left_eigenvectors_[:,j])),[0]*len(msm.left_eigenvectors_[:,j]),"k--")
+    plt.hold(True)
+    if np.dot(p,lv_maxcal[:,j]) > 0 :
+        for stateid in range(40):
+            plt.vlines(stateid,min(0,rv_maxcal[stateid,j]),max(rv_maxcal[stateid,j],0),linestyles='solid',linewidth="2")
+    else:
+        for stateid in range(40):
+            plt.vlines(stateid,min(0,-rv_maxcal[stateid,j]),max(-rv_maxcal[stateid,j],0),linestyles='solid',linewidth="2")
+    if j == 0:
+        plt.title("Fs-EEE-maxcal")
+plt.savefig("eigenvectors-msm-maxcal.pdf")
+plt.show()
+"""
+
+k = 11
+
+u, lv, rv = _solve_msm_eigensystem(T, k)
+V = rv
+S = np.diag(lv[:,0])
+C = S.dot(T)
+try:
+    trace = np.trace(V.T.dot(C.dot(V)).dot(np.linalg.inv(V.T.dot(S.dot(V)))))
+except np.linalg.LinAlgError:
+    trace = np.nan
+print "T_MSM score",trace
+
+u, lv, rv = _solve_msm_eigensystem(best_T_maxcal, k)
+V = rv
+S = np.diag(lv[:,0])
+C = S.dot(T)
+try:
+    trace = np.trace(V.T.dot(C.dot(V)).dot(np.linalg.inv(V.T.dot(S.dot(V)))))
+except np.linalg.LinAlgError:
+    trace = np.nan
+print "T_Maxcal score",trace
+
