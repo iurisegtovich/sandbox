@@ -4,7 +4,8 @@ from scipy.spatial import distance
 import scipy.linalg
 from msmbuilder.msm.core import _solve_msm_eigensystem
 
-pid = 6383
+pid = 6386
+projname = 'ERR'
 
 T = np.load("./data/tProb-%d.npy"%pid)
 C_sym = np.load("./data/tCounts-%d.npy"%pid)
@@ -25,9 +26,9 @@ else:
     lagtime=50
     impliedts = []
     top_ten_evals = evals[np.argsort(-evals)[1:11]]
-    for i in top_ten_evals:
-        impliedts.append(-lagtime/np.log(i))
-    print "Implied Timescales(MSM):",impliedts
+    #for i in top_ten_evals:
+    #    impliedts.append(-lagtime/np.log(i))
+    #print "Implied Timescales(MSM):",impliedts
 
 
 # Calculate matrix of jump indicators, N_ab
@@ -76,9 +77,23 @@ def D(x, pi):
 #alpha_values = np.arange(0.81, 0.825,0.001)
 #gamma_values = np.arange(9.75, 9.8,0.001)
 
-#for 8-tics
-alpha_values = np.arange(0.6, 0.7,0.005)
-gamma_values = np.arange(0.88, 0.90,0.005)
+#for 8-tics Fs-EEE 6383
+#alpha_values = np.arange(0.6, 0.7,0.001)
+#gamma_values = np.arange(0.88, 0.90,0.001)
+
+#for 8-tics Fs-EER 6384
+#alpha_values = np.arange(0.66, 0.69, 0.001)
+#gamma_values = np.arange(0.90, 0.915, 0.001)
+
+#for 8-tics Fs-EER 6385
+#alpha_values = np.arange(0.3, 0.5, 0.05)
+#gamma_values = np.arange(0.9, 1.1, 0.1)
+
+#for 8-tics Fs-EER 6386
+alpha_values = np.arange(0.0, 1.0, 0.1)
+gamma_values = np.arange(0.8, 1.1, 0.1)
+
+
 
 #for 2-tics
 #alpha_values = np.arange(1.0, 1.6,0.1)
@@ -100,7 +115,7 @@ for i in range(len(alpha_values)):
         # calculate W_ab
         W = np.exp(-alpha*N_ab) * np.exp(-gamma*r_ab)
 
-        tol = 1.0e-8
+        tol = 1.0e-6
         max_delta = 1.0
         trial = 0
         beta_a = np.ones(nstates) # initial guess
@@ -178,7 +193,7 @@ plt.xlim([1e-8,1])
 #plt.plot([1,1e-3],[1,1e-3],'k-')
 plt.plot([1,1e-8],[1,1e-8],'k-')
 #figfn="rmsd-maxcal.pdf"
-figfn = "tICs-8-maxcal.pdf"
+figfn = "T-vs-Tmaxcal-tICs-8-maxcal-p%d.pdf"%pid
 plt.title(figfn)
 plt.savefig(figfn)
 plt.show()
@@ -193,35 +208,33 @@ plt.subplot(1,2,2)
 plt.pcolor(best_T_maxcal)
 plt.title("Color map of T_MaxCal")
 
-plt.savefig("pcolor_T_8_tICs.png")
+plt.savefig("pcolor_T_8_tICs_p%d.pdf"%pid)
 plt.show()
 
+k=10
+
 #calculate implied timescales associated with T_maxcal
-u_maxcal, lv_maxcal, rv_maxcal = scipy.linalg.eig(np.transpose(best_T_maxcal),left=True,right=True)
-print lv_maxcal[:,np.argmax(u_maxcal)]
-print rv_maxcal[:,np.argmax(u_maxcal)]
-print u_maxcal[np.argmax(u_maxcal)]
+u_maxcal, lv_maxcal, rv_maxcal = _solve_msm_eigensystem(np.transpose(best_T_maxcal),k+1)
+u_maxcal = np.real(u_maxcal)
 ind_maxcal = np.argsort(-u_maxcal)
 top_ten_evals = u_maxcal[ind_maxcal[1:11]]
 
 lagtime = 50
-impliedts = []
-for i in top_ten_evals:
-    impliedts.append(-lagtime/np.log(i))
+impliedts = -lagtime/np.log(top_ten_evals)
 print "Implied Timescales(MaxCal):",impliedts
+maxcalts_fn = "ImpliedTimescales-maxcal-%d.txt"%pid
+np.savetxt(maxcalts_fn,impliedts)
 
-u_msm, lv_msm, rv_msm = scipy.linalg.eig(np.transpose(T),left=True,right=True)
-print lv_msm[:,np.argmax(u_msm)]
-print rv_msm[:,np.argmax(u_msm)]
-impliedts = []
+u_msm, lv_msm, rv_msm = _solve_msm_eigensystem(np.transpose(T),k)
+u_msm = np.real(u_msm)
 ind_msm = np.argsort(-u_msm)
 top_ten_evals = u_msm[ind_msm[1:11]]
-for i in top_ten_evals:
-    impliedts.append(-lagtime/np.log(i))
+impliedts = -lagtime/np.log(top_ten_evals)
 print "Implied Timescales(MSM):",impliedts
+msmts_fn = "ImpliedTimescales-msm-%d.txt"%pid
+np.savetxt(msmts_fn,impliedts)
 
 p = 1./40.*np.ones(40)
-"""
 plt.figure(figsize=(12,12))
 
 for j in range(5):
@@ -238,7 +251,7 @@ for j in range(5):
             plt.vlines(stateid,min(0,-rv_msm[stateid,j]),max(-rv_msm[stateid,j],0),linestyles='solid',linewidth="2")
 
     if j == 0:
-        plt.title("Fs-EEE-msm")
+        plt.title("Fs-%s-msm"%projname)
 
 for j in range(5):
     ax = plt.subplot(5,2,j*2+2)
@@ -252,14 +265,13 @@ for j in range(5):
         for stateid in range(40):
             plt.vlines(stateid,min(0,-rv_maxcal[stateid,j]),max(-rv_maxcal[stateid,j],0),linestyles='solid',linewidth="2")
     if j == 0:
-        plt.title("Fs-EEE-maxcal")
-plt.savefig("eigenvectors-msm-maxcal.pdf")
+        plt.title("Fs-%s-maxcal"%projname)
+plt.savefig("eigenvectors-msm-maxcal-p%d.pdf"%pid)
 plt.show()
-"""
 
-k = 11
+k = 10
 
-u, lv, rv = _solve_msm_eigensystem(T, k)
+u, lv, rv = _solve_msm_eigensystem(T, k+1)
 V = rv
 S = np.diag(lv[:,0])
 C = S.dot(T)
