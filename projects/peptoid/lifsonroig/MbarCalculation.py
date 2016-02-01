@@ -4,7 +4,7 @@ from pymbar import MBAR
 import mbarTools_GZ as mbartools
 
 
-def prepare_mbar_input(u_k, temps, N_max = 1000):
+def prepare_mbar_input(energies, temps, N_max = 1000):
 
     kB_in_kJ = 1.381e-23 * 6.022e23 / 1000.0 # Boltzmann constant in kJ/mol/K -- for GROMACS
     kB = kB_in_kJ/4.1868   # use for AMBER (kcal/mol/K)
@@ -12,8 +12,6 @@ def prepare_mbar_input(u_k, temps, N_max = 1000):
 
     ntemps = len(temps) # number of temperatures
     K = ntemps # ntemps
-
-    energies = energies[:,::NSkipTraj]
 
     # Allocate storage for simulation data
     N_k = np.zeros([K], np.int32) # N_k[k] is the number of snapshots from umbrella simulation k
@@ -44,6 +42,7 @@ dlogtemp = (np.log(maxtemp) - np.log(mintemp))/(ntemps-1)
 temps = np.exp(np.arange(np.log(mintemp), np.log(maxtemp)+dlogtemp, dlogtemp ))
 temps = np.round(temps)[0:ntemps]
 
+ntemps = 4
 K = ntemps
 N = 1000
 
@@ -56,6 +55,7 @@ bins=1
 for seqlength in range(5,6):
     for k in range(ntemps):
         path_dir = os.path.join(path_data,"SPE%d_trj%d_cis-_gaff_u"%(seqlength,k))
+        print "Loading from %s."%path_dir
         path_LogL = os.path.join(path_dir,'LogLikelihood.dat')
         path_w = os.path.join(path_dir,'w_params.dat')
         path_v = os.path.join(path_dir,'v_params.dat')
@@ -63,12 +63,17 @@ for seqlength in range(5,6):
         obs_w[k,:] = np.loadtxt(path_w)[-N:,0]
         obs_v[k,:] = np.loadtxt(path_v)[-N:,0]
 
-
-u_kln, N_k = prepare_mbar_input(u_k=energies_LogL,temps=temps,N_max=N)
+print "Preparing data..."
+u_kln, N_k = prepare_mbar_input(energies=energies_LogL,temps=temps[:ntemps],N_max=N)
 
 print "Running MBAR..."
 mbar = MBAR(u_kln, N_k, relative_tolerance = 2.0e-2, verbose = True, method = 'self-consistent-iteration')
 # compute observable expectations
+A_k = np.zeros(N*K,np.float64)
+index = 0
+for i in range(len(obs_w)):
+    A_k[index:len(obs_w[i])] = obs_w[i]
+    index = index + len(obs_w[i])
 P, dP = mbar.computeExpectations(obs_w,uncertainty_method='approximate')
 print "P:"
 print P
