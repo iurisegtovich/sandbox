@@ -70,3 +70,8 @@ if 0:
     #plt.savefig("flux_rmsd_2.0_population_weighted.pdf")
     plt.savefig("flux_rmsd_2.0.pdf")
 
+fn1 = "flux_ratio_p53(mM)_vs_mdm2.txt"
+fn2 = "flux_ratio_p53(uM)_vs_mdm2.txt"
+np.savetxt(fn1,flux_ratio_vs_mdm2)
+np.savetxt(fn2,flux_ratio1_vs_mdm2)
+print "Wrote: %s,%s"%(fn1,fn2)
