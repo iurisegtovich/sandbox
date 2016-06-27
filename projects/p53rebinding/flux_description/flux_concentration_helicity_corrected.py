@@ -27,6 +27,23 @@ k_wt = 1.8e+04
 k_tw = 1.4e+06
 k_eq_wt = k_wt/k_tw
 
+k_off_overall = 8.6e+05 # 1/s
+k_off_exp = 2.0
+
+k_on_overall = 5.8e+07 #1/(M*s)
+k_on_exp = 9.2e+06
+
+factor_k_off =  k_off_exp/k_off_overall
+factor_k_on = k_on_exp /k_on_overall
+
+k_off_t = k_off_t*factor_k_off
+k_on_t = k_on_t*factor_k_on
+k_d_t = k_off_t/k_on_t
+k_on_w = k_on_w*factor_k_on
+k_off_w = k_off_w*factor_k_off
+k_d_w = k_off_w/k_on_w
+
+
 
 k_wt = k_wt*(h_exp*(1-h_sim)/(h_sim*(1-h_exp)))**0.5
 
