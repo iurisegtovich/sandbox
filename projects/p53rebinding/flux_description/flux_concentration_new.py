@@ -55,13 +55,20 @@ for c_mdm2 in concentrations:
     #print "F_cs:",flux_cs,"F_if:",flux_if,"F_cs/(F_cs+F_if):",flux_cs/(flux_cs+flux_if)
     flux_ratio1_vs_mdm2.append(flux_cs/(flux_cs+flux_if))
 
-plt.plot(concentrations,flux_ratio_vs_mdm2)
-plt.plot(concentrations,flux_ratio1_vs_mdm2)
-plt.ylabel(r"$\frac{F_{cs}}{F_{cs}+F_{if}}$",fontsize=25)
-plt.xlabel(r"MDM2 concentration (M)",fontsize=15)
-params = {'legend.fontsize': 12,
+if 0:
+    plt.plot(concentrations,flux_ratio_vs_mdm2)
+    plt.plot(concentrations,flux_ratio1_vs_mdm2)
+    plt.ylabel(r"$\frac{F_{cs}}{F_{cs}+F_{if}}$",fontsize=25)
+    plt.xlabel(r"MDM2 concentration (M)",fontsize=15)
+    params = {'legend.fontsize': 12,
           'legend.handlelength': 2}
-plt.rcParams.update(params)
-plt.legend(["p53=7.1 mM","p53=7.1 uM"],loc='best')
-plt.xscale('log')
-plt.show()
+    plt.rcParams.update(params)
+    plt.legend(["p53=7.1 mM","p53=7.1 uM"],loc='best')
+    plt.xscale('log')
+    plt.show()
+
+fn1 = "flux_ratio_p53(mM)_vs_mdm2.txt"
+fn2 = "flux_ratio_p53(uM)_vs_mdm2.txt"
+np.savetxt(fn1,flux_ratio_vs_mdm2)
+np.savetxt(fn2,flux_ratio1_vs_mdm2)
+print "Wrote: %s,%s"%(fn1,fn2)

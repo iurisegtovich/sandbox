@@ -2,6 +2,13 @@ from flux_utils import *
 import numpy as np
 import matplotlib.pyplot as plt
 
+p = np.loadtxt("../Data/Populations.dat")
+
+h_sim = p[2]/(p[2]+p[3])
+
+print h_sim
+print p[0]/p[0]+p[1]
+h_exp = 0.64
 
 c_p53 = 7.1*10**-3 #Mol
 c_mdm2 = 7.1*10**-3
@@ -20,22 +27,10 @@ k_wt = 1.8e+04
 k_tw = 1.4e+06
 k_eq_wt = k_wt/k_tw
 
-k_off_overall = 8.6e+05 # 1/s
-k_off_exp = 2.0
 
-k_on_overall = 5.8e+07 #1/(M*s)
-k_on_exp = 9.2e+06
+k_wt = k_wt*(h_exp*(1-h_sim)/(h_sim*(1-h_exp)))**0.5
 
-factor_k_off =  k_off_exp/k_off_overall
-factor_k_on = k_on_exp /k_on_overall
-
-k_off_t = k_off_t*factor_k_off
-k_on_t = k_on_t*factor_k_on
-k_d_t = k_off_t/k_on_t
-k_on_w = k_on_w*factor_k_on
-k_off_w = k_off_w*factor_k_off
-k_d_w = k_off_w/k_on_w
-
+k_eq_wt = k_wt/k_tw
 
 concentrations = 10**(np.arange(-7,0,0.1))
 
@@ -72,19 +67,14 @@ for c_mdm2 in concentrations:
     #print "F_cs:",flux_cs,"F_if:",flux_if,"F_cs/(F_cs+F_if):",flux_cs/(flux_cs+flux_if)
     flux_ratio1_vs_mdm2.append(flux_cs/(flux_cs+flux_if))
 
-if 0:
-    plt.plot(concentrations,flux_ratio_vs_mdm2)
-    plt.plot(concentrations,flux_ratio1_vs_mdm2)
-    plt.ylabel(r"$\frac{F_{cs}}{F_{cs}+F_{if}}$",fontsize=25)
-    plt.xlabel(r"MDM2 concentration (M)",fontsize=15)
-    params = {'legend.fontsize': 12,
+plt.plot(concentrations,flux_ratio_vs_mdm2)
+plt.plot(concentrations,flux_ratio1_vs_mdm2)
+plt.ylabel(r"$\frac{F_{cs}}{F_{cs}+F_{if}}$",fontsize=25)
+plt.xlabel(r"MDM2 concentration (M)",fontsize=15)
+params = {'legend.fontsize': 12,
           'legend.handlelength': 2}
-    plt.rcParams.update(params)
-    plt.legend(["p53=7.1 mM","p53=7.1 uM"],loc='best')
-    plt.xscale('log')
-    plt.show()
-fn1 = "flux_ratio_corrected_p53(mM)_vs_mdm2.txt"
-fn2 = "flux_ratio_corrected_p53(uM)_vs_mdm2.txt"
-np.savetxt(fn1,flux_ratio_vs_mdm2)
-np.savetxt(fn2,flux_ratio1_vs_mdm2)
-print "Wrote: %s,%s"%(fn1,fn2)
+plt.rcParams.update(params)
+plt.legend(["p53=7.1 mM","p53=7.1 uM"],loc='best')
+plt.xscale('log')
+plt.show()
+
