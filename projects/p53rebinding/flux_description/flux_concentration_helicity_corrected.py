@@ -2,7 +2,7 @@ from flux_utils import *
 import numpy as np
 import matplotlib.pyplot as plt
 
-p = np.loadtxt("../Data/Populations.dat")
+p = np.loadtxt("Populations.dat")
 
 h_sim = p[2]/(p[2]+p[3])
 
@@ -46,10 +46,13 @@ k_d_w = k_off_w/k_on_w
 
 
 k_wt = k_wt*(h_exp*(1-h_sim)/(h_sim*(1-h_exp)))**0.5
+k_tw = k_tw*(h_sim*(1-h_exp)/(h_exp*(1-h_sim)))**0.5
 
 k_eq_wt = k_wt/k_tw
 
-concentrations = 10**(np.arange(-7,0,0.1))
+concentrations = 10**(np.arange(-7,0,0.01))
+concentrations = np.insert(concentrations,0,7.1e-3)
+concentrations = sorted(concentrations)
 
 flux_ratio_vs_mdm2 = []
 binding_affinity_vs_mdm2 = []
@@ -84,14 +87,24 @@ for c_mdm2 in concentrations:
     #print "F_cs:",flux_cs,"F_if:",flux_if,"F_cs/(F_cs+F_if):",flux_cs/(flux_cs+flux_if)
     flux_ratio1_vs_mdm2.append(flux_cs/(flux_cs+flux_if))
 
-plt.plot(concentrations,flux_ratio_vs_mdm2)
-plt.plot(concentrations,flux_ratio1_vs_mdm2)
-plt.ylabel(r"$\frac{F_{cs}}{F_{cs}+F_{if}}$",fontsize=25)
-plt.xlabel(r"MDM2 concentration (M)",fontsize=15)
-params = {'legend.fontsize': 12,
+if 0:
+    plt.plot(concentrations,flux_ratio_vs_mdm2)
+    plt.plot(concentrations,flux_ratio1_vs_mdm2)
+    plt.ylabel(r"$\frac{F_{cs}}{F_{cs}+F_{if}}$",fontsize=25)
+    plt.xlabel(r"MDM2 concentration (M)",fontsize=15)
+    params = {'legend.fontsize': 12,
           'legend.handlelength': 2}
-plt.rcParams.update(params)
-plt.legend(["p53=7.1 mM","p53=7.1 uM"],loc='best')
-plt.xscale('log')
-plt.show()
+    plt.rcParams.update(params)
+    plt.legend(["p53=7.1 mM","p53=7.1 uM"],loc='best')
+    plt.xscale('log')
+    plt.show()
+
+fn1 = "flux_ratio_corrected_p53(mM)_vs_mdm2_helicity%d.txt"%(int(h_exp*100))
+fn2 = "flux_ratio_corrected_p53(uM)_vs_mdm2_helicity%d.txt"%(int(h_exp*100))
+fn3 = "binding_affinity_corrected_p53(mM)_vs_mdm2_helicity%d.txt"%(int(h_exp*100))
+np.savetxt(fn1,flux_ratio_vs_mdm2)
+np.savetxt(fn2,flux_ratio1_vs_mdm2)
+np.savetxt(fn3,binding_affinity_vs_mdm2)
+print "Wrote: %s,%s,%s"%(fn1,fn2,fn3)
+
 

@@ -37,7 +37,9 @@ k_off_w = k_off_w*factor_k_off
 k_d_w = k_off_w/k_on_w
 
 
-concentrations = 10**(np.arange(-7,0,0.1))
+concentrations = 10**(np.arange(-7,0,0.01))
+concentrations = np.insert(concentrations,0,7.1e-3)
+concentrations = sorted(concentrations)
 
 flux_ratio_vs_mdm2 = []
 binding_affinity_vs_mdm2 = []
@@ -85,6 +87,8 @@ if 0:
     plt.show()
 fn1 = "flux_ratio_corrected_p53(mM)_vs_mdm2.txt"
 fn2 = "flux_ratio_corrected_p53(uM)_vs_mdm2.txt"
+fn3 = "binding_affinity_corrected_p53(mM)_vs_mdm2.txt"
 np.savetxt(fn1,flux_ratio_vs_mdm2)
 np.savetxt(fn2,flux_ratio1_vs_mdm2)
-print "Wrote: %s,%s"%(fn1,fn2)
+np.savetxt(fn3,binding_affinity_vs_mdm2)
+print "Wrote: %s,%s,%s"%(fn1,fn2,fn3)
