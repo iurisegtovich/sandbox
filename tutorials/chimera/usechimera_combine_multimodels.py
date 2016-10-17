@@ -9,10 +9,10 @@ import os,sys
 import chimera
 from chimera import runCommand as rc
 
-for i in range(1):
-    for j in range(1):
-        recptor = '../../MurA-MSM-mol2/state%d-%d.aligned.mol2'%(i,j)
-        ligand = 'MurA-albo-dock/state%d-%d/rigid-xtal1_scored.mol2'%(i,j)
+for i in range(100):
+    for j in range(5):
+        recptor = '../../../../MurA-MSM-mol2/state%d-%d.aligned.mol2'%(i,j)
+        ligand = '../../MurA-albo-dock/state%d-%d/rigid-xtal1_scored.mol2'%(i,j)
         outfile = 'state%d-%d-albo1.pdb'%(i,j)
         rc("open %s"%recptor)
         rc("open %s"%ligand)
